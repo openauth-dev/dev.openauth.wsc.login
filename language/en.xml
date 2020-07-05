@@ -28,7 +28,7 @@
         <item name="wcf.user.3rdparty.connect.error.error.redirect_mismatch"><![CDATA[The given Redirect URI in your OpenAuth.dev application settings is not correct.]]></item>
         <item name="wcf.user.3rdparty.connect.error.error.invalid_request"><![CDATA[Invalid or missing response type.]]></item>
         <item name="wcf.user.3rdparty.connect.error.error.consent_required"><![CDATA[You rejected access to your OpenAuth.dev account, therefore a connection cannot be established.]]></item>
-        <item name="wcf.user.3rdparty.woltauth.connect.error.inuse"><![CDATA[Your WoltAuth account is already connected to a different user.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.inuse"><![CDATA[Your OpenAuth.dev account is already connected to a different user.]]></item>
         <!-- /errors -->
     </category>
     
