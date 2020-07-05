@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data xmlns="https://www.woltlab.com" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://www.woltlab.com https://www.woltlab.com/XSD/2019/templateListener.xsd">
+    <import>
+        <templatelistener name="openAuthLogin3rdpartyButtons">
+            <environment>user</environment>
+            <templatename>login</templatename>
+            <eventname>3rdpartyButtons</eventname>
+            <templatecode><![CDATA[{include file='__openAuthLogin'}]]></templatecode>
+        </templatelistener>
+
+        <templatelistener name="openAuthPageHeaderUser3rdpartyButtons">
+            <environment>user</environment>
+            <templatename>pageHeaderUser</templatename>
+            <eventname>3rdpartyButtons</eventname>
+            <templatecode><![CDATA[{include file='__openAuthLogin'}]]></templatecode>
+        </templatelistener>
+
+        <templatelistener name="openAuthAccountManagement3rdpartyFields">
+            <environment>user</environment>
+            <templatename>accountManagement</templatename>
+            <eventname>3rdpartyFields</eventname>
+            <templatecode><![CDATA[{include file='__openAuthAccountManagement3rdpartyFields'}]]></templatecode>
+        </templatelistener>
+
+        <templatelistener name="openAuthAvatarEditAvatarFields">
+            <environment>user</environment>
+            <templatename>avatarEdit</templatename>
+            <eventname>avatarFields</eventname>
+            <templatecode><![CDATA[{include file='__openAuthAvatarEditAvatarFields'}]]></templatecode>
+        </templatelistener>
+
+        <templatelistener name="openAuthAvatarEditAvatarFieldsAdmin">
+            <environment>admin</environment>
+            <templatename>userAdd</templatename>
+            <eventname>avatarFields</eventname>
+            <templatecode><![CDATA[{include file='__openAuthAvatarEditAvatarFields'}]]></templatecode>
+        </templatelistener>
+    </import>
+</data>

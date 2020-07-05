@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/2019/eventListener.xsd">
+    <import>
+        <!-- admin -->
+        <eventlistener name="openAuthAvatarEditListenerAdmin">
+            <eventclassname>wcf\acp\form\UserEditForm</eventclassname>
+            <eventname>readData,assignVariables,save,saved</eventname>
+            <listenerclassname>wcf\system\event\listener\OpenAuthAvatarEditListener</listenerclassname>
+            <environment>admin</environment>
+            <inherit>1</inherit>
+        </eventlistener>
+
+        <eventlistener name="openAuthUserProfileListenerAdmin">
+            <eventclassname>wcf\data\user\UserProfile</eventclassname>
+            <eventname>getAvatar</eventname>
+            <listenerclassname>wcf\system\event\listener\OpenAuthUserProfileListener</listenerclassname>
+            <environment>admin</environment>
+            <inherit>1</inherit>
+        </eventlistener>
+        <!-- /admin -->
+
+        <!-- user -->
+        <eventlistener name="openAuthRegisterListener">
+            <eventclassname>wcf\form\RegisterForm</eventclassname>
+            <eventname>readData,submit,save,registerVia3rdParty,saved</eventname>
+            <inherit>1</inherit>
+            <environment>user</environment>
+            <listenerclassname>wcf\system\event\listener\OpenAuthRegisterListener</listenerclassname>
+        </eventlistener>
+
+        <eventlistener name="openAuthAccountManagementListener">
+            <eventclassname>wcf\form\AccountManagementForm</eventclassname>
+            <eventname>readFormParameters,assignVariables,save,saved</eventname>
+            <inherit>1</inherit>
+            <environment>user</environment>
+            <listenerclassname>wcf\system\event\listener\OpenAuthAccountManagementListener</listenerclassname>
+        </eventlistener>
+
+        <eventlistener name="openAuthAvatarEditListener">
+            <eventclassname>wcf\form\AvatarEditForm</eventclassname>
+            <eventname>readData,assignVariables,save,saved</eventname>
+            <listenerclassname>wcf\system\event\listener\OpenAuthAvatarEditListener</listenerclassname>
+            <environment>user</environment>
+            <inherit>1</inherit>
+        </eventlistener>
+
+        <eventlistener name="openAuthUserProfileListener">
+            <eventclassname>wcf\data\user\UserProfile</eventclassname>
+            <eventname>getAvatar</eventname>
+            <listenerclassname>wcf\system\event\listener\OpenAuthUserProfileListener</listenerclassname>
+            <environment>user</environment>
+            <inherit>1</inherit>
+        </eventlistener>
+        <!-- /user -->
+    </import>
+</data>

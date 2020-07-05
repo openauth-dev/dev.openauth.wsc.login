@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language xmlns="https://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://www.woltlab.com https://www.woltlab.com/XSD/2019/language.xsd"
+          languagename="Deutsch"
+          languagecode="de"
+          countrycode="de">
+    <category name="wcf.acp.option">
+        <item name="wcf.acp.option.openauth_client_id"><![CDATA[OpenAuth.dev Client-ID]]></item>
+        <item name="wcf.acp.option.openauth_client_id.description"><![CDATA[Client-ID der bei <a href="https://openauth.dev/app-create/" target="_blank">OpenAuth.dev</a> angelegten Anwendung.<br />Die Weiterleitungsadresse lautet: {link controller='OpenAuth' application='wcf' forceFrontend=true}{/link}]]></item>
+        <item name="wcf.acp.option.openauth_client_secret"><![CDATA[OpenAuth.dev Client-Geheimnis]]></item>
+        <item name="wcf.acp.option.openauth_client_secret.description"><![CDATA[Client-Geheimnis der o.g. OpenAuth.dev-Anwendung.]]></item>
+    </category>
+    
+    <category name="wcf.user.3rdparty">
+        <item name="wcf.user.3rdparty.openauth"><![CDATA[OpenAuth.dev]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect"><![CDATA[Mit OpenAuth.dev-Konto {if $__wcf->session->getVar('__openAuthUsername')}(„{$__wcf->session->getVar('__openAuthUsername')}“){/if} verknüpfen]]></item>
+        <item name="wcf.user.3rdparty.openauth.login"><![CDATA[Mit OpenAuth.dev anmelden]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.success"><![CDATA[{if LANGUAGE_USE_INFORMAL_VARIANT}Dein{else}Ihr{/if} Benutzerkonto wurde erfolgreich mit {if LANGUAGE_USE_INFORMAL_VARIANT}deinem{else}Ihrem{/if} OpenAuth.dev-Konto verknüpft.]]></item>
+        <item name="wcf.user.3rdparty.openauth.disconnect"><![CDATA[Verknüpfung mit OpenAuth.dev trennen]]></item>
+        <item name="wcf.user.3rdparty.openauth.disconnect.success"><![CDATA[Die Verknüpfung mit {if LANGUAGE_USE_INFORMAL_VARIANT}deinem{else}Ihrem{/if} OpenAuth.dev-Konto wurde erfolgreich getrennt.]]></item>
+        <item name="wcf.user.3rdparty.openauth.register"><![CDATA[{if LANGUAGE_USE_INFORMAL_VARIANT}Du erstellst{else}Sie erstellen{/if} einen Account über <span class="icon icon16 fa-openauth"></span>&nbsp;OpenAuth.dev. Der Benutzername, die E-Mail-Adresse und eventuell vorhandene Profilfelder wurden daher bereits ausgefüllt.]]></item>
+
+        <!-- errors -->
+        <item name="wcf.user.3rdparty.openauth.connect.error.inuse"><![CDATA[{if LANGUAGE_USE_INFORMAL_VARIANT}Dein{else}Ihr{/if} OpenAuth.dev-Konto ist bereits mit einem anderen Benutzerkonto verknüpft.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid"><![CDATA[Die OpenAuth.dev-Daten sind ungültig.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.configuration"><![CDATA[Die Konfiguration für die OpenAuth.dev-Schnittstelle konnte nicht geladen werden.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid_scope"><![CDATA[Ungültiger Wert in Parameter "scope".]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.redirect_mismatch"><![CDATA[Die in der OpenAuth.dev-Anwendung hinterlegte Weiterleitungsadresse ist nicht korrekt.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid_request"><![CDATA[Ungültiger oder fehlender Antworttyp.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.consent_required"><![CDATA[Da {if LANGUAGE_USE_INFORMAL_VARIANT}du{else}Sie{/if} die Berechtigungen verweigert {if LANGUAGE_USE_INFORMAL_VARIANT}hast{else}haben{/if}, ist die Anmeldung mit OpenAuth.dev leider nicht möglich.]]></item>
+        <!-- /errors -->
+    </category>
+    
+    <category name="wcf.user.avatar">
+        <item name="wcf.user.avatar.type.openauth"><![CDATA[OpenAuth.dev-Avatar verwenden]]></item>
+        <item name="wcf.user.avatar.type.openauth.description"><![CDATA[Es wird der Avatar von OpenAuth als Avatar auf dieser Seite verwendet.]]></item>
+    </category>
+</language>

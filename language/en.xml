@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language xmlns="https://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://www.woltlab.com https://www.woltlab.com/XSD/2019/language.xsd"
+          languagename="English"
+          languagecode="en"
+          countrycode="gb">
+    <category name="wcf.acp.option">
+        <item name="wcf.acp.option.openauth_client_id"><![CDATA[OpenAuth.dev Client ID]]></item>
+        <item name="wcf.acp.option.openauth_client_id.description"><![CDATA[Client ID of the created <a href="https://openauth.dev/app-create/" target="_blank">OpenAuth.dev</a> application.<br>Redirect URI: {link controller='OpenAuth' application='wcf' forceFrontend=true}{/link}]]></item>
+        <item name="wcf.acp.option.openauth_client_secret"><![CDATA[OpenAuth.dev Client Secret]]></item>
+        <item name="wcf.acp.option.openauth_client_secret.description"><![CDATA[Client secret of the OpenAuth.dev application.]]></item>
+    </category>
+    
+    <category name="wcf.user.3rdparty">
+        <item name="wcf.user.3rdparty.openauth"><![CDATA[OpenAuth.dev]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect"><![CDATA[Connect with your OpenAuth.dev account{if $__wcf->session->getVar('__openAuthUsername')} “{$__wcf->session->getVar('__openAuthUsername')}”{/if}.]]></item>
+        <item name="wcf.user.3rdparty.openauth.login"><![CDATA[Login With OpenAuth.dev]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.success"><![CDATA[Your user account has been connected with OpenAuth.dev.]]></item>
+        <item name="wcf.user.3rdparty.openauth.disconnect"><![CDATA[Cancel connection with OpenAuth.dev]]></item>
+        <item name="wcf.user.3rdparty.openauth.disconnect.success"><![CDATA[Your account is no longer connected with OpenAuth.dev.]]></item>
+        <item name="wcf.user.3rdparty.openauth.register"><![CDATA[You are creating an account through <span class="icon icon16 fa-openauth"></span>&nbsp;OpenAuth.dev, therefore your username, your email address and your profile informations have been automatically filled.]]></item>
+        
+        <!-- errors -->
+        <item name="wcf.user.3rdparty.openauth.connect.error.inuse"><![CDATA[Your OpenAuth.dev account is already connected to a different user.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid"><![CDATA[The OpenAuth.dev data is invalid.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.configuration"><![CDATA[OpenAuth.dev interface configuration could not be loaded.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid_scope"><![CDATA[Invalid value in parameter "scope" provided.]]></item>
+        <item name="wcf.user.3rdparty.connect.error.error.redirect_mismatch"><![CDATA[The given Redirect URI in your OpenAuth.dev application settings is not correct.]]></item>
+        <item name="wcf.user.3rdparty.connect.error.error.invalid_request"><![CDATA[Invalid or missing response type.]]></item>
+        <item name="wcf.user.3rdparty.connect.error.error.consent_required"><![CDATA[You rejected access to your OpenAuth.dev account, therefore a connection cannot be established.]]></item>
+        <item name="wcf.user.3rdparty.woltauth.connect.error.inuse"><![CDATA[Your WoltAuth account is already connected to a different user.]]></item>
+        <!-- /errors -->
+    </category>
+    
+    <category name="wcf.user.avatar">
+        <item name="wcf.user.avatar.type.openauth"><![CDATA[Use OpenAuth.dev Avatar]]></item>
+        <item name="wcf.user.avatar.type.openauth.description"><![CDATA[The avatar of OpenAuth.dev is used as avatar on this page.]]></item>
+    </category>
+</language>

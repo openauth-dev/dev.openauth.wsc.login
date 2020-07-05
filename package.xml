@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package name="dev.openauth.wsc.login" xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/2019/package.xsd">
+    <packageinformation>
+        <packagename><![CDATA[OpenAuth.dev]]></packagename>
+        <packagename language="de"><![CDATA[OpenAuth.dev]]></packagename>
+        <packagedescription><![CDATA[OpenAuth.dev login and registration for WoltLab Suite.]]></packagedescription>
+        <packagedescription language="de"><![CDATA[OpenAuth.dev Login und Registrierung für die WoltLab Suite.]]></packagedescription>
+        <version>1.0.0</version>
+        <date>2020-07-01</date>
+    </packageinformation>
+
+    <authorinformation>
+        <author><![CDATA[The OpenAuth.dev Team]]></author>
+        <authorurl><![CDATA[https://www.openauth.dev]]></authorurl>
+    </authorinformation>
+
+    <requiredpackages>
+        <requiredpackage minversion="3.0.0">com.woltlab.wcf</requiredpackage>
+    </requiredpackages>
+
+    <excludedpackages>
+        <excludedpackage version="6.0.0 Alpha 1">com.woltlab.wcf</excludedpackage>
+    </excludedpackages>
+
+    <instructions type="install">
+        <instruction type="sql" />
+        <instruction type="file" />
+        <instruction type="acpTemplate" />
+        <instruction type="template" />
+        <instruction type="option" />
+        <instruction type="eventListener" />
+        <instruction type="templateListener" />
+        <instruction type="language"/>
+    </instructions>
+</package>
