@@ -25,10 +25,9 @@
         <item name="wcf.user.3rdparty.openauth.connect.error.invalid"><![CDATA[The OpenAuth.dev data is invalid.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.configuration"><![CDATA[OpenAuth.dev interface configuration could not be loaded.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.invalid_scope"><![CDATA[Invalid value in parameter "scope" provided.]]></item>
-        <item name="wcf.user.3rdparty.connect.error.error.redirect_mismatch"><![CDATA[The given Redirect URI in your OpenAuth.dev application settings is not correct.]]></item>
-        <item name="wcf.user.3rdparty.connect.error.error.invalid_request"><![CDATA[Invalid or missing response type.]]></item>
-        <item name="wcf.user.3rdparty.connect.error.error.consent_required"><![CDATA[You rejected access to your OpenAuth.dev account, therefore a connection cannot be established.]]></item>
-        <item name="wcf.user.3rdparty.openauth.connect.error.inuse"><![CDATA[Your OpenAuth.dev account is already connected to a different user.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.redirect_mismatch"><![CDATA[The given Redirect URI in your OpenAuth.dev application settings is not correct.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.invalid_request"><![CDATA[Invalid or missing response type.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.consent_required"><![CDATA[Unfortunately, because you have denied permissions, you cannot log in with OpenAuth.dev.]]></item>
         <!-- /errors -->
     </category>
     
