@@ -6,7 +6,7 @@
           countrycode="de">
     <category name="wcf.acp.option">
         <item name="wcf.acp.option.openauth_client_id"><![CDATA[OpenAuth.dev Client-ID]]></item>
-        <item name="wcf.acp.option.openauth_client_id.description"><![CDATA[Client-ID der bei <a href="https://openauth.dev/app-create/" target="_blank">OpenAuth.dev</a> angelegten Anwendung.<br />Die Weiterleitungsadresse lautet: {link controller='OpenAuth' application='wcf' forceFrontend=true}{/link}]]></item>
+        <item name="wcf.acp.option.openauth_client_id.description"><![CDATA[Client-ID der bei <a href="https://www.openauth.dev/developer/app-create/" target="_blank">OpenAuth.dev</a> angelegten Anwendung.<br />Die Weiterleitungsadresse lautet: {link controller='OpenAuth' application='wcf' forceFrontend=true}{/link}]]></item>
         <item name="wcf.acp.option.openauth_client_secret"><![CDATA[OpenAuth.dev Client-Geheimnis]]></item>
         <item name="wcf.acp.option.openauth_client_secret.description"><![CDATA[Client-Geheimnis der o.g. OpenAuth.dev-Anwendung.]]></item>
     </category>
