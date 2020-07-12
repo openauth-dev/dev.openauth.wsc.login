@@ -5,8 +5,8 @@
         <packagename language="de"><![CDATA[OpenAuth.dev]]></packagename>
         <packagedescription><![CDATA[OpenAuth.dev login and registration for WoltLab Suite.]]></packagedescription>
         <packagedescription language="de"><![CDATA[OpenAuth.dev Login und Registrierung für die WoltLab Suite.]]></packagedescription>
-        <version>1.0.0</version>
-        <date>2020-07-01</date>
+        <version>1.0.0 beta 1</version>
+        <date>2020-07-12</date>
     </packageinformation>
 
     <authorinformation>
