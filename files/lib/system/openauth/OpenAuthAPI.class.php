@@ -153,7 +153,7 @@ class OpenAuthAPI extends SingletonFactory
     public function getOauthConfiguration($configurationName)
     {
         if (null === $this->configuration) {
-            $this->configuration = $this->call(sprintf(self::OPENAUTH_API_URL, 'open-id-configuration', OPENAUTH_CLIENT_ID));
+            $this->configuration = $this->call(sprintf(self::OPENAUTH_API_URL, '.well-known/openid-configuration', OPENAUTH_CLIENT_ID));
         }
 
         if (!empty($this->configuration[$configurationName])) {
