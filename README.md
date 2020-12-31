@@ -1,11 +1,11 @@
-# OpenAuth.dev Provider for WoltLab Suite
+# OpenAuth.dev Provider for WoltLab Suite 5
 
 <div align=center>
 
 ![openauth-icon](https://user-images.githubusercontent.com/81188/87538212-25d2ef00-c69c-11ea-87a7-b967826cb669.png)
 
 
-### OpenAuth.dev Provider for WoltLab Suite
+### OpenAuth.dev Provider for WoltLab Suite 5
 
 </div>
 
@@ -29,8 +29,8 @@ WIP
 
 You need:
 
-- A WoltLab Suite installation (3.0.0 or newer)
-- PHP (5.6.20 or newer)
+- A WoltLab Suite installation (5.2.0 or newer)
+- PHP (7.0.22 or newer)
 - Activated `fsockopen` (including support for SSL connections) on your webspace/server
 - A free user account on [OpenAuth.dev](https://www.openauth.dev), which has been authorized as a developer
 
