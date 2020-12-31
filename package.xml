@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <package name="dev.openauth.wsc.login" xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/2019/package.xsd">
     <packageinformation>
-        <packagename><![CDATA[OpenAuth.dev]]></packagename>
-        <packagename language="de"><![CDATA[OpenAuth.dev]]></packagename>
+        <packagename><![CDATA[OpenAuth.dev 3rd Party Login]]></packagename>
+        <packagename language="de"><![CDATA[OpenAuth.dev Drittanbieter-Login]]></packagename>
         <packagedescription><![CDATA[OpenAuth.dev login and registration for WoltLab Suite.]]></packagedescription>
         <packagedescription language="de"><![CDATA[OpenAuth.dev Login und Registrierung für die WoltLab Suite.]]></packagedescription>
         <version>1.0.0 beta 1</version>
-        <date>2020-07-12</date>
+        <date>2020-12-31</date>
     </packageinformation>
 
     <authorinformation>
@@ -15,7 +15,7 @@
     </authorinformation>
 
     <requiredpackages>
-        <requiredpackage minversion="3.0.0">com.woltlab.wcf</requiredpackage>
+        <requiredpackage minversion="5.2.0">com.woltlab.wcf</requiredpackage>
     </requiredpackages>
 
     <excludedpackages>

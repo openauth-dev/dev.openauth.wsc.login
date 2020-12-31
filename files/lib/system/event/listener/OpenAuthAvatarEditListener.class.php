@@ -1,7 +1,7 @@
 <?php
+
 /*
  * Copyright by The OpenAuth.dev Team.
- * This file is part of dev.openauth.wsc.login.
  *
  * License: GNU Lesser General Public License v2.1
  *
@@ -9,12 +9,12 @@
  * MODIFY IT UNDER THE TERMS OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE AS PUBLISHED BY THE FREE SOFTWARE FOUNDATION; EITHER
  * VERSION 2.1 OF THE LICENSE, OR (AT YOUR OPTION) ANY LATER VERSION.
- * 
+ *
  * THIS LIBRARY IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL,
  * BUT WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  SEE THE GNU
  * LESSER GENERAL PUBLIC LICENSE FOR MORE DETAILS.
- * 
+ *
  * YOU SHOULD HAVE RECEIVED A COPY OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE ALONG WITH THIS LIBRARY; IF NOT, WRITE TO THE FREE SOFTWARE
  * FOUNDATION, INC., 51 FRANKLIN STREET, FIFTH FLOOR, BOSTON, MA  02110-1301  USA
@@ -31,14 +31,22 @@ use wcf\data\user\User;
 use wcf\data\user\UserAction;
 use wcf\form\AbstractForm;
 use wcf\form\AvatarEditForm;
+use wcf\system\exception\SystemException;
 use wcf\system\WCF;
+
+use function file_exists;
+use function in_array;
+use function mb_strtolower;
+use function md5;
+use function parse_url;
+use function pathinfo;
+use function sprintf;
+use function unlink;
 
 class OpenAuthAvatarEditListener implements IParameterizedEventListener
 {
     /**
      * @inheritDoc
-     *
-     * @return void
      */
     public function execute($eventObj, $className, $eventName, array &$parameters)
     {
@@ -50,12 +58,11 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AvatarEditForm $eventObj
-     * @return void
-     * @see AbstractPage::readData()
+     * @param AvatarEditForm|UserEditForm $eventObj
      *
+     * @see AbstractPage::readData()
      */
-    protected function readData(AvatarEditForm $eventObj)
+    protected function readData($eventObj)
     {
         if (empty($_POST)) {
             if ($eventObj instanceof UserEditForm) {
@@ -69,22 +76,22 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AvatarEditForm $eventObj
-     * @return void
+     * @param AvatarEditForm|UserEditForm $eventObj
+     *
      * @see AbstractPage::assignVariables()
      */
-    protected function assignVariables(AvatarEditForm $eventObj)
+    protected function assignVariables($eventObj)
     {
         $this->readData($eventObj);
     }
 
     /**
-     * @param AvatarEditForm $eventObj
-     * @return void
-     * @throws \wcf\system\exception\SystemException
+     * @param AvatarEditForm|UserEditForm $eventObj
+     * @throws SystemException
+     *
      * @see AbstractForm::save()
      */
-    protected function save(AvatarEditForm $eventObj)
+    protected function save($eventObj)
     {
         if (isset($_POST['avatarType'])) {
             $data = [];
@@ -112,11 +119,11 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AvatarEditForm $eventObj
-     * @return void
+     * @param AvatarEditForm|UserEditForm $eventObj
+     *
      * @see AbstractForm::saved()
      */
-    protected function saved(AvatarEditForm $eventObj)
+    protected function saved($eventObj)
     {
         if (isset($_POST['avatarType']) && $_POST['avatarType'] === 'OpenAuth') {
             $eventObj->avatarType = 'OpenAuth';
@@ -125,9 +132,6 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
 
     /**
      * Resets openauth avatar after disabling.
-     *
-     * @param User $user
-     * @return void
      */
     private function resetOpenAuthAvatarCache(User $user)
     {
@@ -142,7 +146,11 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
             return;
         }
 
-        $cachedFilename = sprintf(OpenAuthAvatar::OPENAUTH_CACHE_LOCATION, md5(mb_strtolower($user->openAuthAvatar)), $pathInfo['extension']);
+        $cachedFilename = sprintf(
+            OpenAuthAvatar::OPENAUTH_CACHE_LOCATION,
+            md5(mb_strtolower($user->openAuthAvatar)),
+            $pathInfo['extension']
+        );
 
         if (file_exists(WCF_DIR . $cachedFilename)) {
             @unlink(WCF_DIR . $cachedFilename);

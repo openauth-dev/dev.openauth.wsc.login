@@ -1,7 +1,7 @@
 <?php
+
 /*
  * Copyright by The OpenAuth.dev Team.
- * This file is part of dev.openauth.wsc.login.
  *
  * License: GNU Lesser General Public License v2.1
  *
@@ -9,12 +9,12 @@
  * MODIFY IT UNDER THE TERMS OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE AS PUBLISHED BY THE FREE SOFTWARE FOUNDATION; EITHER
  * VERSION 2.1 OF THE LICENSE, OR (AT YOUR OPTION) ANY LATER VERSION.
- * 
+ *
  * THIS LIBRARY IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL,
  * BUT WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  SEE THE GNU
  * LESSER GENERAL PUBLIC LICENSE FOR MORE DETAILS.
- * 
+ *
  * YOU SHOULD HAVE RECEIVED A COPY OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE ALONG WITH THIS LIBRARY; IF NOT, WRITE TO THE FREE SOFTWARE
  * FOUNDATION, INC., 51 FRANKLIN STREET, FIFTH FLOOR, BOSTON, MA  02110-1301  USA
@@ -28,6 +28,7 @@ namespace wcf\system\event\listener;
 use wcf\form\AbstractForm;
 use wcf\form\AccountManagementForm;
 use wcf\page\AbstractPage;
+use wcf\system\exception\SystemException;
 use wcf\system\request\LinkHandler;
 use wcf\system\WCF;
 use wcf\util\HeaderUtil;
@@ -52,8 +53,6 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
 
     /**
      * @inheritDoc
-     *
-     * @return void
      */
     public function execute($eventObj, $className, $eventName, array &$parameters)
     {
@@ -65,7 +64,6 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
     }
 
     /**
-     * @return void
      * @see AbstractForm::readFormParameters()
      */
     protected function readFormParameters()
@@ -80,7 +78,6 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
     }
 
     /**
-     * @return void
      * @see AbstractPage::assignVariables()
      */
     protected function assignVariables()
@@ -92,8 +89,6 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AccountManagementForm $eventObj
-     * @return void
      * @see AbstractForm::save()
      */
     protected function save(AccountManagementForm $eventObj)
@@ -117,8 +112,8 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
     }
 
     /**
-     * @return void
-     * @throws \wcf\system\exception\SystemException
+     * @throws SystemException
+     *
      * @see AbstractForm::saved()
      */
     protected function saved()

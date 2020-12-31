@@ -1,7 +1,7 @@
 <?php
+
 /*
  * Copyright by The OpenAuth.dev Team.
- * This file is part of dev.openauth.wsc.login.
  *
  * License: GNU Lesser General Public License v2.1
  *
@@ -9,12 +9,12 @@
  * MODIFY IT UNDER THE TERMS OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE AS PUBLISHED BY THE FREE SOFTWARE FOUNDATION; EITHER
  * VERSION 2.1 OF THE LICENSE, OR (AT YOUR OPTION) ANY LATER VERSION.
- * 
+ *
  * THIS LIBRARY IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL,
  * BUT WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  SEE THE GNU
  * LESSER GENERAL PUBLIC LICENSE FOR MORE DETAILS.
- * 
+ *
  * YOU SHOULD HAVE RECEIVED A COPY OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE ALONG WITH THIS LIBRARY; IF NOT, WRITE TO THE FREE SOFTWARE
  * FOUNDATION, INC., 51 FRANKLIN STREET, FIFTH FLOOR, BOSTON, MA  02110-1301  USA
@@ -25,6 +25,7 @@
 
 namespace wcf\system\openauth;
 
+use Exception;
 use wcf\system\exception\SystemException;
 use wcf\system\option\user\UserOptionHandler;
 use wcf\system\request\LinkHandler;
@@ -33,8 +34,28 @@ use wcf\util\HTTPRequest;
 use wcf\util\JSON;
 use wcf\util\StringUtil;
 
+use function array_intersect;
+use function array_keys;
+use function array_search;
+use function array_values;
+use function http_build_query;
+use function implode;
+use function is_callable;
+use function mb_strlen;
+use function md5;
+use function mt_rand;
+use function openssl_random_pseudo_bytes;
+use function random_bytes;
+use function random_int;
+use function sprintf;
+use function substr;
+use function uniqid;
+
 class OpenAuthAPI extends SingletonFactory
 {
+    /**
+     * @var string
+     */
     const OPENAUTH_API_URL = 'https://openauth.dev/%s?clientID=%s';
 
     /**
@@ -45,33 +66,34 @@ class OpenAuthAPI extends SingletonFactory
     /**
      * Generates a random string, using the best available method.
      *
-     * @param int $length
-     *
-     * @return string|null
-     *
      * @throws SystemException
-     * @throws \Exception
-     *
+     * @throws Exception
      */
-    public static function generateRandom($length = 32)
+    public static function generateRandom(int $length = 32)
     {
-        if (!null === $length || (int)$length <= 8) {
+        if (class_exists('\ParagonIE\ConstantTime\Hex')) {
+            $hexFn = '\ParagonIE\ConstantTime\Hex::encode';
+        } else {
+            $hexFn = '\bin2hex';
+        }
+
+        if (!null === $length || $length <= 8) {
             $length = 32;
         }
 
         if (is_callable('random_bytes')) {
-            /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */
-            return substr(bin2hex(random_bytes($length)), -$length, $length);
+            return substr($hexFn(random_bytes($length)), -$length, $length);
         }
 
         if (is_callable('openssl_random_pseudo_bytes')) {
+            /** @noinspection CryptographicallySecureRandomnessInspection */
             $random = openssl_random_pseudo_bytes($length, $isSourceStrong);
 
             if (false === $isSourceStrong || false === $random) {
                 throw new SystemException('IV generation failed');
             }
 
-            return substr(bin2hex($random), -$length, $length);
+            return substr($hexFn($random), -$length, $length);
         }
 
         if (is_callable('random_int')) {
@@ -80,7 +102,6 @@ class OpenAuthAPI extends SingletonFactory
             $max = mb_strlen($keySpace, '8bit') - 1;
 
             for ($i = 0; $i < $length; ++$i) {
-                /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */
                 $str .= $keySpace[random_int(0, $max)];
             }
 
@@ -92,13 +113,14 @@ class OpenAuthAPI extends SingletonFactory
         }
 
         if (is_callable('mcrypt_create_iv')) {
+            /** @noinspection CryptographicallySecureRandomnessInspection */
             $randomM = mcrypt_create_iv($length, MCRYPT_DEV_RANDOM);
 
             if (false === $randomM) {
                 throw new SystemException('IV generation failed');
             }
 
-            return substr(bin2hex($randomM), -$length, $length);
+            return substr($hexFn($randomM), -$length, $length);
         }
 
         return StringUtil::getRandomID();
@@ -107,24 +129,23 @@ class OpenAuthAPI extends SingletonFactory
     /**
      * Get redirect uri.
      *
-     * @return string
-     *
      * @throws SystemException
      */
-    public function getRedirectURI()
+    public function getRedirectURI(): string
     {
-        return LinkHandler::getInstance()->getLink('OpenAuth', [
-            'forceFrontend' => true,
-            'application' => 'wcf'
-        ]);
+        return LinkHandler::getInstance()->getLink(
+            'OpenAuth',
+            [
+                'forceFrontend' => true,
+                'application' => 'wcf'
+            ]
+        );
     }
 
     /**
      * Returns a scope to user option mapping.
-     *
-     * @return array
      */
-    public function getUserOptionNames()
+    public function getUserOptionNames(): array
     {
         return [
             'homepage' => 'website',
@@ -144,38 +165,38 @@ class OpenAuthAPI extends SingletonFactory
     /**
      * Loads the remote oAuth configuration.
      *
-     * @param $configurationName
-     *
-     * @return mixed
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getOauthConfiguration($configurationName)
+    public function getOauthConfiguration(string $configurationName): string
     {
         if (null === $this->configuration) {
-            $this->configuration = $this->call(sprintf(self::OPENAUTH_API_URL, '.well-known/openid-configuration', OPENAUTH_CLIENT_ID));
+            $this->configuration = $this->call(
+                sprintf(
+                    self::OPENAUTH_API_URL,
+                    '.well-known/openid-configuration',
+                    OPENAUTH_CLIENT_ID
+                )
+            );
         }
 
         if (!empty($this->configuration[$configurationName])) {
-            return $this->configuration[$configurationName];
+            return (string)$this->configuration[$configurationName];
         }
 
-        return null;
+        return '';
     }
 
     /**
      * Returns a list of available scopes.
      *
-     * @return array|null
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getScopes()
+    public function getScopes(): array
     {
         $scopes = $this->getOauthConfiguration('scopes_supported');
 
         if (null === $scopes) {
-            return null;
+            return [];
         }
 
         $scopes[] = 'openid';
@@ -202,19 +223,14 @@ class OpenAuthAPI extends SingletonFactory
     /**
      * Returns the authorization Uri.
      *
-     * @param $state
-     * @param array $scopes
-     *
-     * @return string|null
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getAuthorizationURI($state, $scopes = [])
+    public function getAuthorizationURI(string $state, array $scopes = []): string
     {
         $authorizationEndpoint = $this->getOauthConfiguration('authorization_endpoint');
 
         if (null === $authorizationEndpoint) {
-            return null;
+            return '';
         }
 
         $requestParameters = [
@@ -225,24 +241,20 @@ class OpenAuthAPI extends SingletonFactory
             'redirect_uri' => $this->getRedirectURI()
         ];
 
-        return $authorizationEndpoint . '?' . http_build_query($requestParameters, null, '&');
+        return $authorizationEndpoint . '?' . http_build_query($requestParameters, null);
     }
 
     /**
      * Checks if the given oAuth code is valid.
      *
-     * @param $code
-     *
-     * @return array|null
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function checkOAuthCode($code)
+    public function checkOAuthCode(string $code): array
     {
         $tokenEndpoint = $this->getOauthConfiguration('token_endpoint');
 
         if (null === $tokenEndpoint) {
-            return null;
+            return [];
         }
 
         $params = [
@@ -257,20 +269,16 @@ class OpenAuthAPI extends SingletonFactory
     }
 
     /**
-     * Returns user informations for the given access token from the oAuth server.
+     * Returns user information for the given access token from the oAuth server.
      *
-     * @param $accessToken
-     *
-     * @return array|null
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getUserInfo($accessToken)
+    public function getUserInfo(string $accessToken): array
     {
         $userinfoEndpoint = $this->getOauthConfiguration('userinfo_endpoint');
 
         if (null === $userinfoEndpoint) {
-            return null;
+            return [];
         }
 
         return $this->call($userinfoEndpoint, [], $accessToken);
@@ -279,14 +287,9 @@ class OpenAuthAPI extends SingletonFactory
     /**
      * Executes http requests.
      *
-     * @param $url
-     * @param array $data
-     * @param null $accessToken
-     *
-     * @return array|null
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function call($url, $data = [], $accessToken = null)
+    protected function call(string $url, array $data = [], string $accessToken = null): array
     {
         try {
             $request = new HTTPRequest($url, [], $data);
@@ -294,11 +297,11 @@ class OpenAuthAPI extends SingletonFactory
             if (null !== $accessToken) {
                 $request->addHeader('Authorization', 'Bearer ' . $accessToken);
             }
-            
+
             $request->execute();
-            
+
             return JSON::decode($request->getReply()['body']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if (ENABLE_DEBUG_MODE) {
                 throw $e;
             }

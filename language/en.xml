@@ -10,7 +10,7 @@
         <item name="wcf.acp.option.openauth_client_secret"><![CDATA[OpenAuth.dev Client Secret]]></item>
         <item name="wcf.acp.option.openauth_client_secret.description"><![CDATA[Client secret of the OpenAuth.dev application.]]></item>
     </category>
-    
+
     <category name="wcf.user.3rdparty">
         <item name="wcf.user.3rdparty.openauth"><![CDATA[OpenAuth.dev]]></item>
         <item name="wcf.user.3rdparty.openauth.connect"><![CDATA[Connect with your OpenAuth.dev account{if $__wcf->session->getVar('__openAuthUsername')} “{$__wcf->session->getVar('__openAuthUsername')}”{/if}.]]></item>
@@ -19,7 +19,7 @@
         <item name="wcf.user.3rdparty.openauth.disconnect"><![CDATA[Cancel connection with OpenAuth.dev]]></item>
         <item name="wcf.user.3rdparty.openauth.disconnect.success"><![CDATA[Your account is no longer connected with OpenAuth.dev.]]></item>
         <item name="wcf.user.3rdparty.openauth.register"><![CDATA[You are creating an account through <span class="icon icon16 fa-openauth"></span>&nbsp;OpenAuth.dev, therefore your username, your email address and your profile informations have been automatically filled.]]></item>
-        
+
         <!-- errors -->
         <item name="wcf.user.3rdparty.openauth.connect.error.inuse"><![CDATA[Your OpenAuth.dev account is already connected to a different user.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.invalid"><![CDATA[The OpenAuth.dev data is invalid.]]></item>
@@ -28,9 +28,10 @@
         <item name="wcf.user.3rdparty.openauth.connect.error.redirect_mismatch"><![CDATA[The given Redirect URI in your OpenAuth.dev application settings is not correct.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.invalid_request"><![CDATA[Invalid or missing response type.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.consent_required"><![CDATA[Unfortunately, because you have denied permissions, you cannot log in with OpenAuth.dev.]]></item>
+        <item name="wcf.user.3rdparty.openauth.connect.error.unauthorized_client"><![CDATA[The OpenAuth.dev application configuration seems to be incorrect. Please contact the website administrator.]]></item>
         <!-- /errors -->
     </category>
-    
+
     <category name="wcf.user.avatar">
         <item name="wcf.user.avatar.type.openauth"><![CDATA[Use OpenAuth.dev Avatar]]></item>
         <item name="wcf.user.avatar.type.openauth.description"><![CDATA[The avatar of OpenAuth.dev is used as avatar on this page.]]></item>

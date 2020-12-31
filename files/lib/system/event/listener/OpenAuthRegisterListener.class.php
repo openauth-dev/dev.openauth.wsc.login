@@ -1,7 +1,7 @@
 <?php
+
 /*
  * Copyright by The OpenAuth.dev Team.
- * This file is part of dev.openauth.wsc.login.
  *
  * License: GNU Lesser General Public License v2.1
  *
@@ -9,12 +9,12 @@
  * MODIFY IT UNDER THE TERMS OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE AS PUBLISHED BY THE FREE SOFTWARE FOUNDATION; EITHER
  * VERSION 2.1 OF THE LICENSE, OR (AT YOUR OPTION) ANY LATER VERSION.
- * 
+ *
  * THIS LIBRARY IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL,
  * BUT WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
  * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  SEE THE GNU
  * LESSER GENERAL PUBLIC LICENSE FOR MORE DETAILS.
- * 
+ *
  * YOU SHOULD HAVE RECEIVED A COPY OF THE GNU LESSER GENERAL PUBLIC
  * LICENSE ALONG WITH THIS LIBRARY; IF NOT, WRITE TO THE FREE SOFTWARE
  * FOUNDATION, INC., 51 FRANKLIN STREET, FIFTH FLOOR, BOSTON, MA  02110-1301  USA
@@ -28,6 +28,7 @@ namespace wcf\system\event\listener;
 use wcf\data\user\option\UserOption;
 use wcf\form\RegisterForm;
 use wcf\page\AbstractPage;
+use wcf\system\exception\SystemException;
 use wcf\system\openauth\OpenAuthAPI;
 use wcf\system\WCF;
 
@@ -56,23 +57,21 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     }
 
     /**
-     * @param RegisterForm $eventObj
-     * @return void
-     * @throws \wcf\system\exception\SystemException
+     * @throws SystemException
+     *
      * @see AbstractForm::submit()
      */
-    protected function submit($eventObj)
+    protected function submit(RegisterForm $eventObj)
     {
         $this->readData($eventObj);
     }
 
     /**
-     * @param RegisterForm $eventObj
-     * @return void
-     * @throws \wcf\system\exception\SystemException
+     * @throws SystemException
+     *
      * @see AbstractPage::readData
      */
-    protected function readData($eventObj)
+    protected function readData(RegisterForm $eventObj)
     {
         if ($this->isInitialized) {
             return;
@@ -93,11 +92,13 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
             if (empty($this->userData[$dataName])) {
                 continue;
             }
+
             if (empty($eventObj->optionHandler->cachedOptions[$optionName])) {
                 continue;
             }
 
             $optionData = $eventObj->optionHandler->cachedOptions[$optionName]->getData();
+
             if ($optionData['askDuringRegistration']) {
                 continue;
             }
@@ -113,12 +114,9 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     }
 
     /**
-     * @param RegisterForm $eventObj
-     * @return void
      * @see AbstractForm::save()
-     *
      */
-    protected function save($eventObj)
+    protected function save(RegisterForm $eventObj)
     {
         if (empty($this->userData)) {
             return;
@@ -134,13 +132,9 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     }
 
     /**
-     * registerVia3rdParty
-     *
-     * @param RegisterForm $eventObj
-     * @param array $parameters
      * @return void
      */
-    protected function registerVia3rdParty($eventObj, array &$parameters)
+    protected function registerVia3rdParty(RegisterForm $eventObj, array &$parameters)
     {
         if (empty($this->userData['email_verified'])) {
             return;
@@ -158,9 +152,7 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     }
 
     /**
-     * @return void
      * @see RegisterForm::saved
-     *
      */
     protected function saved()
     {
