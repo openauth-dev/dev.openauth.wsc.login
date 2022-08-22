@@ -25,29 +25,33 @@
 
 namespace wcf\action;
 
+use DomainException;
+use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\RequestOptions;
+use RuntimeException;
 use wcf\data\user\avatar\OpenAuthAvatar;
 use wcf\data\user\avatar\UserAvatar;
 use wcf\data\user\User;
 use wcf\data\user\UserEditor;
 use wcf\system\exception\IllegalLinkException;
-use wcf\system\exception\PermissionDeniedException;
-use wcf\system\exception\SystemException;
+use wcf\system\io\File;
+use wcf\system\io\http\RedirectGuard;
+use wcf\system\io\HttpFactory;
 use wcf\util\FileUtil;
-use wcf\util\HTTPRequest;
+use wcf\util\Url;
 
-use function file_exists;
-use function file_put_contents;
-use function header;
-use function in_array;
-use function mb_strtolower;
-use function md5;
-use function parse_url;
-use function pathinfo;
-use function readfile;
-use function sprintf;
+use const IMAGETYPE_GIF;
+use const IMAGETYPE_JPEG;
+use const IMAGETYPE_PNG;
 
 class OpenAuthAvatarDownloadAction extends AbstractAction
 {
+    /**
+     * @inheritDoc
+     */
+    public $neededModules = ['OPENAUTH_CLIENT_ID', 'OPENAUTH_CLIENT_SECRET'];
+
     /**
      * @var int
      */
@@ -68,7 +72,7 @@ class OpenAuthAvatarDownloadAction extends AbstractAction
      *
      * @throws IllegalLinkException
      */
-    public function readParameters()
+    public function readParameters(): void
     {
         parent::readParameters();
 
@@ -86,88 +90,139 @@ class OpenAuthAvatarDownloadAction extends AbstractAction
     /**
      * @inheritDoc
      *
-     * @throws PermissionDeniedException
-     * @throws SystemException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \wcf\system\exception\PermissionDeniedException
+     * @throws \wcf\system\exception\SystemException
      */
-    public function execute()
+    public function execute(): void
     {
         parent::execute();
 
         if (!empty($this->user->openAuthAvatar) && OPENAUTH_CLIENT_ID && OPENAUTH_CLIENT_SECRET) {
-            $urlParsed = parse_url($this->user->openAuthAvatar);
-            $pathInfo = pathinfo($urlParsed['path']);
+            $pathInfo = Url::parse($this->user->openAuthAvatar)['path'];
 
-            if (in_array($pathInfo['extension'], ['jpg', 'png', 'gif'])) {
-                $contentType = 'image/png';
-                $extension = 'png';
-
+            if (\in_array($pathInfo['extension'], ['jpg', 'png', 'gif', 'webp'])) {
                 if ($pathInfo['extension'] === 'jpg') {
                     $contentType = 'image/jpeg';
                     $extension = 'jpg';
                 } elseif ($pathInfo['extension'] === 'gif') {
                     $contentType = 'image/gif';
                     $extension = 'gif';
+                } elseif ($pathInfo['extension'] === 'webp') {
+                    $contentType = 'image/webp';
+                    $extension = 'webp';
+                } else {
+                    $contentType = 'image/png';
+                    $extension = 'png';
                 }
 
-                $cachedFilename = sprintf(
-                    OPENAuthAvatar::OPENAUTH_CACHE_LOCATION,
-                    md5(mb_strtolower($this->user->openAuthAvatar)),
+                $fileLocation = WCF_DIR . \sprintf(
+                    OpenAuthAvatar::OPENAUTH_CACHE_LOCATION,
+                    \md5(\mb_strtolower($this->user->openAuthAvatar)),
                     $extension
                 );
 
-                if (file_exists(WCF_DIR . $cachedFilename)) {
-                    @header('content-type: ' . $contentType);
-                    @readfile(WCF_DIR . $cachedFilename);
+                if (\file_exists($fileLocation)) {
+                    $this->executed();
+
+                    @\header('content-type: ' . $contentType);
+                    @\readfile($fileLocation);
+
                     exit;
                 }
 
                 try {
-                    $request = new HTTPRequest($this->user->openAuthAvatar);
-                    $request->execute();
-                    $reply = $request->getReply();
+                    // download image
+                    $file = null;
+                    $response = null;
+                    $tmp = FileUtil::getTemporaryFilename('openauth_avatar_');
 
-                    $fileExtension = 'png';
-                    $mimeType = 'image/png';
+                    try {
+                        $file = new File($tmp);
+                        $client = HttpFactory::makeClient([
+                            RequestOptions::TIMEOUT => 10,
+                            RequestOptions::STREAM => true,
+                            RequestOptions::ALLOW_REDIRECTS => [
+                                'on_redirect' => new RedirectGuard(),
+                            ],
+                        ]);
 
-                    if (isset($reply['httpHeaders']['content-type'][0])) {
-                        switch ($reply['httpHeaders']['content-type'][0]) {
-                            case 'image/jpeg':
-                                $mimeType = 'image/jpeg';
-                                $fileExtension = 'jpg';
-                                break;
-                            case 'image/gif':
-                                $mimeType = 'image/gif';
-                                $fileExtension = 'gif';
-                                break;
+                        $request = new Request('GET', $this->user->openAuthAvatar, ['accept' => 'image/*']);
+                        $response = $client->send($request);
+
+                        while (!$response->getBody()->eof()) {
+                            try {
+                                $file->write($response->getBody()->read(8192));
+                            } catch (RuntimeException $e) {
+                                throw new DomainException(
+                                    'Failed to read response body.',
+                                    0,
+                                    $e
+                                );
+                            }
+                        }
+
+                        $file->flush();
+                    } catch (TransferException $e) {
+                        throw new DomainException('Failed to request', 0, $e);
+                    } finally {
+                        if ($response && $response->getBody()) {
+                            $response->getBody()->close();
+                        }
+
+                        if ($file) {
+                            $file->close();
                         }
                     }
 
-                    $cachedFilename = sprintf(
+                    // check file type
+                    $imageData = @\getimagesize($tmp);
+
+                    if (!$imageData) {
+                        throw new DomainException();
+                    }
+
+                    switch ($imageData[2]) {
+                        case IMAGETYPE_PNG:
+                            $extension = 'png';
+                            break;
+                        case IMAGETYPE_GIF:
+                            $extension = 'gif';
+                            break;
+                        case IMAGETYPE_JPEG:
+                            $extension = 'jpg';
+                            break;
+                        default:
+                            throw new DomainException();
+                    }
+
+                    $fileLocation = WCF_DIR . \sprintf(
                         OpenAuthAvatar::OPENAUTH_CACHE_LOCATION,
-                        md5(mb_strtolower($this->user->openAuthAvatar)),
-                        $fileExtension
+                        \md5(\mb_strtolower($this->user->openAuthAvatar)),
+                        $extension
                     );
 
-                    file_put_contents(WCF_DIR . $cachedFilename, $reply['body']);
-                    FileUtil::makeWritable(WCF_DIR . $cachedFilename);
+                    \rename($tmp, $fileLocation);
 
-                    @header('content-type: ' . $mimeType);
-                    @readfile(WCF_DIR . $cachedFilename);
+                    // update mtime for correct expiration calculation
+                    @\touch($fileLocation);
+
+                    $this->executed();
+
+                    @\header('content-type: ' . $imageData['mime']);
+                    @\readfile($fileLocation);
 
                     exit;
-                } catch (SystemException $e) {
-                    $editor = new UserEditor($this->user);
-                    $editor->update([
-                        'enableOpenAuthAvatar' => 0
-                    ]);
-
-                    throw $e;
+                } catch (DomainException $e) {
+                    (new UserEditor($this->user))->update(['enableOpenAuthAvatar' => 0]);
                 }
             }
         }
 
-        @header('content-type: image/svg+xml');
-        @readfile(WCF_DIR . 'images/avatars/avatar-default.svg');
+        $this->executed();
+
+        @\header('content-type: image/svg+xml');
+        @\readfile(WCF_DIR . 'images/avatars/avatar-default.svg');
 
         exit;
     }

@@ -31,38 +31,28 @@ use wcf\data\user\User;
 use wcf\data\user\UserAction;
 use wcf\form\AbstractForm;
 use wcf\form\AvatarEditForm;
-use wcf\system\exception\SystemException;
 use wcf\system\WCF;
-
-use function file_exists;
-use function in_array;
-use function mb_strtolower;
-use function md5;
-use function parse_url;
-use function pathinfo;
-use function sprintf;
-use function unlink;
 
 class OpenAuthAvatarEditListener implements IParameterizedEventListener
 {
     /**
      * @inheritDoc
+     *
+     * @return void
      */
-    public function execute($eventObj, $className, $eventName, array &$parameters)
+    public function execute($eventObj, $className, $eventName, array &$parameters): void
     {
         if (OPENAUTH_CLIENT_ID === "" && OPENAUTH_CLIENT_SECRET === "") {
             return;
         }
 
-        $this->$eventName($eventObj);
+        $this->{$eventName}($eventObj);
     }
 
     /**
-     * @param AvatarEditForm|UserEditForm $eventObj
-     *
      * @see AbstractPage::readData()
      */
-    protected function readData($eventObj)
+    protected function readData($eventObj): void
     {
         if (empty($_POST)) {
             if ($eventObj instanceof UserEditForm) {
@@ -76,22 +66,19 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AvatarEditForm|UserEditForm $eventObj
-     *
      * @see AbstractPage::assignVariables()
      */
-    protected function assignVariables($eventObj)
+    protected function assignVariables(AvatarEditForm $eventObj): void
     {
         $this->readData($eventObj);
     }
 
     /**
-     * @param AvatarEditForm|UserEditForm $eventObj
-     * @throws SystemException
+     * @throws \wcf\system\exception\SystemException
      *
      * @see AbstractForm::save()
      */
-    protected function save($eventObj)
+    protected function save($eventObj): void
     {
         if (isset($_POST['avatarType'])) {
             $data = [];
@@ -119,11 +106,9 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     }
 
     /**
-     * @param AvatarEditForm|UserEditForm $eventObj
-     *
      * @see AbstractForm::saved()
      */
-    protected function saved($eventObj)
+    protected function saved(AvatarEditForm $eventObj): void
     {
         if (isset($_POST['avatarType']) && $_POST['avatarType'] === 'OpenAuth') {
             $eventObj->avatarType = 'OpenAuth';
@@ -133,27 +118,27 @@ class OpenAuthAvatarEditListener implements IParameterizedEventListener
     /**
      * Resets openauth avatar after disabling.
      */
-    private function resetOpenAuthAvatarCache(User $user)
+    private function resetOpenAuthAvatarCache(User $user): void
     {
         if (!$user->enableOpenAuthAvatar) {
             return;
         }
 
-        $urlParsed = parse_url($user->openAuthAvatar);
-        $pathInfo = pathinfo($urlParsed['path']);
+        $urlParsed = \parse_url($user->openAuthAvatar);
+        $pathInfo = \pathinfo($urlParsed['path']);
 
-        if (!in_array($pathInfo['extension'], ['jpg', 'png', 'gif'])) {
+        if (!\in_array($pathInfo['extension'], ['jpg', 'png', 'gif'])) {
             return;
         }
 
-        $cachedFilename = sprintf(
+        $cachedFilename = \sprintf(
             OpenAuthAvatar::OPENAUTH_CACHE_LOCATION,
-            md5(mb_strtolower($user->openAuthAvatar)),
+            \md5(\mb_strtolower($user->openAuthAvatar)),
             $pathInfo['extension']
         );
 
-        if (file_exists(WCF_DIR . $cachedFilename)) {
-            @unlink(WCF_DIR . $cachedFilename);
+        if (\file_exists(WCF_DIR . $cachedFilename)) {
+            @\unlink(WCF_DIR . $cachedFilename);
         }
     }
 }

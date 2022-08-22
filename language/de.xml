@@ -10,7 +10,7 @@
         <item name="wcf.acp.option.openauth_client_secret"><![CDATA[OpenAuth.dev Client-Geheimnis]]></item>
         <item name="wcf.acp.option.openauth_client_secret.description"><![CDATA[Client-Geheimnis der o.g. OpenAuth.dev-Anwendung.]]></item>
     </category>
-
+    
     <category name="wcf.user.3rdparty">
         <item name="wcf.user.3rdparty.openauth"><![CDATA[OpenAuth.dev]]></item>
         <item name="wcf.user.3rdparty.openauth.connect"><![CDATA[Mit OpenAuth.dev-Konto {if $__wcf->session->getVar('__openAuthUsername')}(„{$__wcf->session->getVar('__openAuthUsername')}“){/if} verknüpfen]]></item>
@@ -28,10 +28,9 @@
         <item name="wcf.user.3rdparty.openauth.connect.error.redirect_mismatch"><![CDATA[Die in der OpenAuth.dev-Anwendung hinterlegte Weiterleitungsadresse ist nicht korrekt.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.invalid_request"><![CDATA[Ungültiger oder fehlender Antworttyp.]]></item>
         <item name="wcf.user.3rdparty.openauth.connect.error.consent_required"><![CDATA[Da {if LANGUAGE_USE_INFORMAL_VARIANT}du{else}Sie{/if} die Berechtigungen verweigert {if LANGUAGE_USE_INFORMAL_VARIANT}hast{else}haben{/if}, ist die Anmeldung mit OpenAuth.dev leider nicht möglich.]]></item>
-        <item name="wcf.user.3rdparty.openauth.connect.error.unauthorized_client"><![CDATA[Fehler in der OpenAuth.dev-Anwendungskonfiguration. Bitte wende{if LANGUAGE_USE_INFORMAL_VARIANT} dich{else}n Sie sich{/if} an den Administrator.]]></item>
         <!-- /errors -->
     </category>
-
+    
     <category name="wcf.user.avatar">
         <item name="wcf.user.avatar.type.openauth"><![CDATA[OpenAuth.dev-Avatar verwenden]]></item>
         <item name="wcf.user.avatar.type.openauth.description"><![CDATA[Es wird der Avatar von OpenAuth als Avatar auf dieser Seite verwendet.]]></item>

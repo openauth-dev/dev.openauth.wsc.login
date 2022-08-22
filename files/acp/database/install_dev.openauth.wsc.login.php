@@ -23,19 +23,19 @@
  * copies or substantial portions of the Software.
  */
 
-namespace wcf\system\event\listener;
+use wcf\system\database\table\column\IntDatabaseTableColumn;
+use wcf\system\database\table\column\NotNullVarchar255DatabaseTableColumn;
+use wcf\system\database\table\column\TinyintDatabaseTableColumn;
+use wcf\system\database\table\PartialDatabaseTable;
 
-use wcf\data\user\avatar\OpenAuthAvatar;
-
-class OpenAuthUserProfileListener implements IParameterizedEventListener
-{
-    /**
-     * @inheritDoc
-     */
-    public function execute($eventObj, $className, $eventName, array &$parameters): void
-    {
-        if ($eventObj->enableOpenAuthAvatar) {
-            $parameters['avatar'] = new OpenAuthAvatar($eventObj->userID);
-        }
-    }
-}
+return [
+    PartialDatabaseTable::create('wcf1_user')
+        ->columns([
+            IntDatabaseTableColumn::create('openAuthID'),
+            NotNullVarchar255DatabaseTableColumn::create('openAuthAvatar'),
+            TinyintDatabaseTableColumn::create('enableOpenAuthAvatar')
+                ->length(1)
+                ->notNull()
+                ->defaultValue(0),
+        ]),
+];

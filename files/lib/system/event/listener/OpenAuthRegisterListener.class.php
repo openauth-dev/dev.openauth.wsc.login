@@ -28,7 +28,6 @@ namespace wcf\system\event\listener;
 use wcf\data\user\option\UserOption;
 use wcf\form\RegisterForm;
 use wcf\page\AbstractPage;
-use wcf\system\exception\SystemException;
 use wcf\system\openauth\OpenAuthAPI;
 use wcf\system\WCF;
 
@@ -47,46 +46,47 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     /**
      * @inheritDoc
      */
-    public function execute($eventObj, $className, $eventName, array &$parameters)
+    public function execute($eventObj, $className, $eventName, array &$parameters): void
     {
         if (OPENAUTH_CLIENT_ID === "" && OPENAUTH_CLIENT_SECRET === "") {
             return;
         }
 
-        $this->$eventName($eventObj, $parameters);
+        $this->{$eventName}($eventObj, $parameters);
     }
 
     /**
-     * @throws SystemException
+     * @throws \wcf\system\exception\SystemException
      *
      * @see AbstractForm::submit()
      */
-    protected function submit(RegisterForm $eventObj)
+    protected function submit(RegisterForm $eventObj): void
     {
         $this->readData($eventObj);
     }
 
     /**
-     * @throws SystemException
+     * @throws \wcf\system\exception\SystemException
      *
      * @see AbstractPage::readData
      */
-    protected function readData(RegisterForm $eventObj)
+    protected function readData(RegisterForm $eventObj): void
     {
         if ($this->isInitialized) {
             return;
         }
+
         $this->isInitialized = true;
 
         if (WCF::getSession()->getVar('__3rdPartyProvider') !== 'openauth') {
             return;
         }
 
-        if (empty(WCF::getSession()->getVar('__openAuthData'))) {
+        if (empty(WCF::getSession()->getVar('__oauthUser'))) {
             return;
         }
 
-        $this->userData = WCF::getSession()->getVar('__openAuthData');
+        $this->userData = WCF::getSession()->getVar('__oauthUser');
 
         foreach (OpenAuthAPI::getInstance()->getUserOptionNames() as $optionName => $dataName) {
             if (empty($this->userData[$dataName])) {
@@ -115,8 +115,9 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
 
     /**
      * @see AbstractForm::save()
+     *
      */
-    protected function save(RegisterForm $eventObj)
+    protected function save(RegisterForm $eventObj): void
     {
         if (empty($this->userData)) {
             return;
@@ -131,10 +132,7 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
         }
     }
 
-    /**
-     * @return void
-     */
-    protected function registerVia3rdParty(RegisterForm $eventObj, array &$parameters)
+    protected function registerVia3rdParty($eventObj, array &$parameters): void
     {
         if (empty($this->userData['email_verified'])) {
             return;
@@ -154,8 +152,8 @@ class OpenAuthRegisterListener implements IParameterizedEventListener
     /**
      * @see RegisterForm::saved
      */
-    protected function saved()
+    protected function saved(): void
     {
-        WCF::getSession()->unregister('__openAuthData');
+        WCF::getSession()->unregister('__oauthUser');
     }
 }

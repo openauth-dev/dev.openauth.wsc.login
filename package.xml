@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package name="dev.openauth.wsc.login" xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/2019/package.xsd">
+<package xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com https://www.woltlab.com/XSD/5.4/package.xsd" name="dev.openauth.wsc.login">
     <packageinformation>
-        <packagename><![CDATA[OpenAuth.dev 3rd Party Login]]></packagename>
-        <packagename language="de"><![CDATA[OpenAuth.dev Drittanbieter-Login]]></packagename>
+        <packagename><![CDATA[OpenAuth.dev]]></packagename>
+        <packagename language="de"><![CDATA[OpenAuth.dev]]></packagename>
         <packagedescription><![CDATA[OpenAuth.dev login and registration for WoltLab Suite.]]></packagedescription>
         <packagedescription language="de"><![CDATA[OpenAuth.dev Login und Registrierung für die WoltLab Suite.]]></packagedescription>
-        <version>1.0.0 beta 1</version>
-        <date>2020-12-31</date>
+        <version>1.0.0 Dev 1</version>
+        <date>2022-08-28</date>
     </packageinformation>
 
     <authorinformation>
@@ -15,16 +15,16 @@
     </authorinformation>
 
     <requiredpackages>
-        <requiredpackage minversion="5.2.0">com.woltlab.wcf</requiredpackage>
+        <requiredpackage minversion="5.4.0">com.woltlab.wcf</requiredpackage>
     </requiredpackages>
 
     <excludedpackages>
-        <excludedpackage version="6.0.0 Alpha 1">com.woltlab.wcf</excludedpackage>
+        <excludedpackage version="5.6.0 Alpha 1">com.woltlab.wcf</excludedpackage>
     </excludedpackages>
 
     <instructions type="install">
-        <instruction type="sql" />
         <instruction type="file" />
+        <instruction type="database">acp/database/install_dev.openauth.wsc.login.php</instruction>
         <instruction type="acpTemplate" />
         <instruction type="template" />
         <instruction type="option" />

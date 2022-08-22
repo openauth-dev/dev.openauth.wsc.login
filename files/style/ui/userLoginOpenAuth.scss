@@ -2,9 +2,15 @@
   font-family: 'woltauth';
   font-weight: normal;
   font-style: normal;
-  src: url('../font/getFont.php?font=woltauth&type=woff2') format('woff2'),
-  url('../font/getFont.php?font=woltauth&type=ttf') format('truetype'),
-  url('../font/getFont.php?font=woltauth&type=woff') format('woff');
+  --woltlab-suite-preload: #{preload(
+      getFont("woltauth.woff2", "", "1.0.0"),
+      $as: "font",
+      $crossorigin: true,
+      $type: "font/woff2"
+  )};
+  src: url(getFont("woltauth.woff2", "", "1.0.0")) format("woff2"),
+  url(getFont("woltauth.woff", "", "1.0.0")) format("woff")
+  url(getFont("woltauth.ttf", "", "1.0.0")) format("truetype");
 }
 
 .fa-woltauth:before {

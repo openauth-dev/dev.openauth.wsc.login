@@ -1,6 +1,0 @@
-.phpcs-cache
-.php_cs.cache
-phpcs.xml
-vendor
-.idea
-/de.softcreatr.wsc.*.tar.gz

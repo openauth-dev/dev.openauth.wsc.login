@@ -28,7 +28,6 @@ namespace wcf\system\event\listener;
 use wcf\form\AbstractForm;
 use wcf\form\AccountManagementForm;
 use wcf\page\AbstractPage;
-use wcf\system\exception\SystemException;
 use wcf\system\request\LinkHandler;
 use wcf\system\WCF;
 use wcf\util\HeaderUtil;
@@ -53,20 +52,22 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
 
     /**
      * @inheritDoc
+     *
+     * @return void
      */
-    public function execute($eventObj, $className, $eventName, array &$parameters)
+    public function execute($eventObj, $className, $eventName, array &$parameters): void
     {
         if (OPENAUTH_CLIENT_ID === "" && OPENAUTH_CLIENT_SECRET === "") {
             return;
         }
 
-        $this->$eventName($eventObj);
+        $this->{$eventName}($eventObj);
     }
 
     /**
      * @see AbstractForm::readFormParameters()
      */
-    protected function readFormParameters()
+    protected function readFormParameters(): void
     {
         if (isset($_POST['openauthDisconnect'])) {
             $this->openAuthDisconnect = (int)$_POST['openauthDisconnect'];
@@ -80,43 +81,43 @@ class OpenAuthAccountManagementListener implements IParameterizedEventListener
     /**
      * @see AbstractPage::assignVariables()
      */
-    protected function assignVariables()
+    protected function assignVariables(): void
     {
         WCF::getTPL()->assign([
             'openAuthConnect' => $this->openAuthConnect,
-            'openAuthDisconnect' => $this->openAuthDisconnect
+            'openAuthDisconnect' => $this->openAuthDisconnect,
         ]);
     }
 
     /**
      * @see AbstractForm::save()
      */
-    protected function save(AccountManagementForm $eventObj)
+    protected function save(AccountManagementForm $eventObj): void
     {
-        if ($this->openAuthConnect && WCF::getSession()->getVar('__openAuthData')) {
-            $userData = WCF::getSession()->getVar('__openAuthData');
+        if ($this->openAuthConnect && WCF::getSession()->getVar('__oauthUser')) {
+            $userData = WCF::getSession()->getVar('__oauthUser');
 
             $eventObj->additionalFields['authData'] = 'openauth:' . $userData['sub'];
             $eventObj->additionalFields['openAuthID'] = $userData['sub'];
             $this->success = 'wcf.user.3rdparty.openauth.connect.success';
 
-            WCF::getSession()->unregister('__openAuthData');
-            WCF::getSession()->unregister('__openAuthUsername');
+            WCF::getSession()->unregister('__oauthUser');
         } elseif ($this->openAuthDisconnect && StringUtil::startsWith(WCF::getUser()->authData, 'openauth:')) {
             $eventObj->additionalFields['authData'] = '';
             $eventObj->additionalFields['openAuthID'] = null;
             $eventObj->additionalFields['openAuthAvatar'] = null;
             $eventObj->additionalFields['enableOpenAuthAvatar'] = 0;
+
             $this->success = 'wcf.user.3rdparty.openauth.disconnect.success';
         }
     }
 
     /**
-     * @throws SystemException
+     * @throws \wcf\system\exception\SystemException
      *
      * @see AbstractForm::saved()
      */
-    protected function saved()
+    protected function saved(): void
     {
         if (!empty($this->success)) {
             HeaderUtil::delayedRedirect(

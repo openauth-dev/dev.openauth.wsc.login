@@ -23,40 +23,29 @@
  * copies or substantial portions of the Software.
  */
 
-namespace wcf\system\openauth;
+namespace wcf\system\openAuth;
 
 use Exception;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Request;
 use wcf\system\exception\SystemException;
+use wcf\system\io\HttpFactory;
 use wcf\system\option\user\UserOptionHandler;
 use wcf\system\request\LinkHandler;
 use wcf\system\SingletonFactory;
-use wcf\util\HTTPRequest;
 use wcf\util\JSON;
-use wcf\util\StringUtil;
 
-use function array_intersect;
-use function array_keys;
-use function array_search;
-use function array_values;
-use function http_build_query;
-use function implode;
-use function is_callable;
-use function mb_strlen;
-use function md5;
-use function mt_rand;
-use function openssl_random_pseudo_bytes;
-use function random_bytes;
-use function random_int;
-use function sprintf;
-use function substr;
-use function uniqid;
+use function wcf\functions\exception\logThrowable;
 
 class OpenAuthAPI extends SingletonFactory
 {
+    protected const OPENAUTH_API_URL = 'https://openauth.dev/%s?clientID=%s';
+
     /**
-     * @var string
+     * @var ClientInterface
      */
-    const OPENAUTH_API_URL = 'https://openauth.dev/%s?clientID=%s';
+    protected $client;
 
     /**
      * @var array
@@ -64,66 +53,35 @@ class OpenAuthAPI extends SingletonFactory
     protected $configuration;
 
     /**
+     * @inheritDoc
+     */
+    public function init(): void
+    {
+        $this->client = HttpFactory::makeClient(['timeout' => 10]);
+    }
+
+    /**
      * Generates a random string, using the best available method.
      *
      * @throws SystemException
      * @throws Exception
+     *
      */
-    public static function generateRandom(int $length = 32)
+    public static function generateRandom(?int $length = 32): ?string
     {
-        if (class_exists('\ParagonIE\ConstantTime\Hex')) {
-            $hexFn = '\ParagonIE\ConstantTime\Hex::encode';
-        } else {
-            $hexFn = '\bin2hex';
-        }
-
-        if (!null === $length || $length <= 8) {
+        if (!null === $length || (int)$length <= 8) {
             $length = 32;
         }
 
-        if (is_callable('random_bytes')) {
-            return substr($hexFn(random_bytes($length)), -$length, $length);
+        $keySpace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $str = '';
+        $max = \mb_strlen($keySpace, '8bit') - 1;
+
+        for ($i = 0; $i < $length; $i++) {
+            $str .= $keySpace[\random_int(0, $max)];
         }
 
-        if (is_callable('openssl_random_pseudo_bytes')) {
-            /** @noinspection CryptographicallySecureRandomnessInspection */
-            $random = openssl_random_pseudo_bytes($length, $isSourceStrong);
-
-            if (false === $isSourceStrong || false === $random) {
-                throw new SystemException('IV generation failed');
-            }
-
-            return substr($hexFn($random), -$length, $length);
-        }
-
-        if (is_callable('random_int')) {
-            $keySpace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $str = '';
-            $max = mb_strlen($keySpace, '8bit') - 1;
-
-            for ($i = 0; $i < $length; ++$i) {
-                $str .= $keySpace[random_int(0, $max)];
-            }
-
-            return $str;
-        }
-
-        if (is_callable('mt_rand')) {
-            return substr(md5(uniqid(mt_rand(), true)), -$length, $length);
-        }
-
-        if (is_callable('mcrypt_create_iv')) {
-            /** @noinspection CryptographicallySecureRandomnessInspection */
-            $randomM = mcrypt_create_iv($length, MCRYPT_DEV_RANDOM);
-
-            if (false === $randomM) {
-                throw new SystemException('IV generation failed');
-            }
-
-            return substr($hexFn($randomM), -$length, $length);
-        }
-
-        return StringUtil::getRandomID();
+        return $str;
     }
 
     /**
@@ -133,13 +91,10 @@ class OpenAuthAPI extends SingletonFactory
      */
     public function getRedirectURI(): string
     {
-        return LinkHandler::getInstance()->getLink(
-            'OpenAuth',
-            [
-                'forceFrontend' => true,
-                'application' => 'wcf'
-            ]
-        );
+        return LinkHandler::getInstance()->getLink('OpenAuth', [
+            'forceFrontend' => true,
+            'application' => 'wcf',
+        ]);
     }
 
     /**
@@ -166,37 +121,35 @@ class OpenAuthAPI extends SingletonFactory
      * Loads the remote oAuth configuration.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getOauthConfiguration(string $configurationName): string
+    public function getOauthConfiguration(string $configurationName)
     {
         if (null === $this->configuration) {
             $this->configuration = $this->call(
-                sprintf(
-                    self::OPENAUTH_API_URL,
-                    '.well-known/openid-configuration',
-                    OPENAUTH_CLIENT_ID
-                )
+                \sprintf(self::OPENAUTH_API_URL, 'open-id-configuration', OPENAUTH_CLIENT_ID)
             );
         }
 
         if (!empty($this->configuration[$configurationName])) {
-            return (string)$this->configuration[$configurationName];
+            return $this->configuration[$configurationName];
         }
 
-        return '';
+        return null;
     }
 
     /**
      * Returns a list of available scopes.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getScopes(): array
+    public function getScopes(): ?array
     {
         $scopes = $this->getOauthConfiguration('scopes_supported');
 
         if (null === $scopes) {
-            return [];
+            return null;
         }
 
         $scopes[] = 'openid';
@@ -206,55 +159,57 @@ class OpenAuthAPI extends SingletonFactory
         $optionHandler->setInRegistration();
         $optionHandler->init();
 
-        $scopesToRemove = array_intersect(array_keys($profileScopes), array_keys($optionHandler->options));
+        $scopesToRemove = \array_intersect(\array_keys($profileScopes), \array_keys($optionHandler->options));
 
         foreach ($scopesToRemove as $scopeToRemove) {
             $scope = $profileScopes[$scopeToRemove];
-            $key = array_search($scope, $scopes, false);
+            $key = \array_search($scope, $scopes, true);
 
             if ($key !== false) {
                 unset($scopes[$key]);
             }
         }
 
-        return array_values($scopes);
+        return \array_values($scopes);
     }
 
     /**
      * Returns the authorization Uri.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getAuthorizationURI(string $state, array $scopes = []): string
+    public function getAuthorizationURI(string $state, array $scopes = []): ?string
     {
         $authorizationEndpoint = $this->getOauthConfiguration('authorization_endpoint');
 
         if (null === $authorizationEndpoint) {
-            return '';
+            return null;
         }
 
         $requestParameters = [
             'response_type' => 'code',
             'client_id' => OPENAUTH_CLIENT_ID,
             'state' => $state,
-            'scope' => implode(' ', $scopes),
-            'redirect_uri' => $this->getRedirectURI()
+            'scope' => \implode(' ', $scopes),
+            'redirect_uri' => $this->getRedirectURI(),
         ];
 
-        return $authorizationEndpoint . '?' . http_build_query($requestParameters, null);
+        return $authorizationEndpoint . '?' . \http_build_query($requestParameters, null, '&');
     }
 
     /**
      * Checks if the given oAuth code is valid.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function checkOAuthCode(string $code): array
+    public function checkOAuthCode($code): ?array
     {
         $tokenEndpoint = $this->getOauthConfiguration('token_endpoint');
 
         if (null === $tokenEndpoint) {
-            return [];
+            return null;
         }
 
         $params = [
@@ -262,7 +217,7 @@ class OpenAuthAPI extends SingletonFactory
             'client_secret' => OPENAUTH_CLIENT_SECRET,
             'code' => $code,
             'grant_type' => 'authorization_code',
-            'redirect_uri' => $this->getRedirectURI()
+            'redirect_uri' => $this->getRedirectURI(),
         ];
 
         return $this->call($tokenEndpoint, $params);
@@ -272,13 +227,14 @@ class OpenAuthAPI extends SingletonFactory
      * Returns user information for the given access token from the oAuth server.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getUserInfo(string $accessToken): array
+    public function getUserInfo(string $accessToken): ?array
     {
         $userinfoEndpoint = $this->getOauthConfiguration('userinfo_endpoint');
 
         if (null === $userinfoEndpoint) {
-            return [];
+            return null;
         }
 
         return $this->call($userinfoEndpoint, [], $accessToken);
@@ -288,25 +244,33 @@ class OpenAuthAPI extends SingletonFactory
      * Executes http requests.
      *
      * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    protected function call(string $url, array $data = [], string $accessToken = null): array
+    protected function call(string $url, array $data = [], ?string $accessToken = null): ?array
     {
         try {
-            $request = new HTTPRequest($url, [], $data);
+            $headers = [
+                'accept-encoding' => 'gzip',
+                'accept' => 'application/json',
+            ];
 
             if (null !== $accessToken) {
-                $request->addHeader('Authorization', 'Bearer ' . $accessToken);
+                $headers['authorization'] = 'Bearer ' . $accessToken;
             }
 
-            $request->execute();
+            $response = $this->client->send(new Request('POST', $url, $headers, $data));
 
-            return JSON::decode($request->getReply()['body']);
-        } catch (Exception $e) {
+            if ($response->getStatusCode() === 200) {
+                return JSON::decode((string)$response->getBody());
+            }
+        } catch (GuzzleException $e) {
             if (ENABLE_DEBUG_MODE) {
                 throw $e;
             }
 
-            return [];
+            logThrowable($e);
         }
+
+        return [];
     }
 }

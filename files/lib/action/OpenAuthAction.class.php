@@ -26,200 +26,249 @@
 namespace wcf\action;
 
 use Exception;
+use Psr\Http\Client\ClientExceptionInterface;
 use wcf\data\user\User;
 use wcf\data\user\UserEditor;
-use wcf\system\exception\IllegalLinkException;
+use wcf\form\RegisterForm;
 use wcf\system\exception\NamedUserException;
 use wcf\system\exception\PermissionDeniedException;
-use wcf\system\exception\SystemException;
 use wcf\system\openauth\OpenAuthAPI;
 use wcf\system\request\LinkHandler;
-use wcf\system\user\authentication\UserAuthenticationFactory;
+use wcf\system\user\authentication\oauth\exception\StateValidationException;
 use wcf\system\WCF;
 use wcf\util\HeaderUtil;
 
-use function hash_equals;
+use function wcf\functions\exception\logThrowable;
 
 class OpenAuthAction extends AbstractAction
 {
     /**
      * @inheritDoc
      */
-    public $neededModules = [
-        'OPENAUTH_CLIENT_ID',
-        'OPENAUTH_CLIENT_SECRET'
-    ];
+    public $neededModules = ['OPENAUTH_CLIENT_ID', 'OPENAUTH_CLIENT_SECRET'];
+
+    /**
+     * @var string
+     */
+    private const STATE = self::class . "\0state_parameter";
 
     /**
      * @inheritDoc
      *
-     * @throws IllegalLinkException
+     * @throws \wcf\system\exception\PermissionDeniedException
      */
-    public function readParameters() {
+    public function readParameters(): void
+    {
         parent::readParameters();
 
         if (WCF::getSession()->spiderID) {
-            throw new IllegalLinkException();
+            throw new PermissionDeniedException();
         }
     }
 
     /**
      * @inheritDoc
      *
-     * @throws IllegalLinkException
-     * @throws NamedUserException
-     * @throws PermissionDeniedException
-     * @throws SystemException
-     * @throws Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \wcf\system\exception\NamedUserException
+     * @throws \wcf\system\exception\PermissionDeniedException
      */
-    public function execute()
+    public function execute(): void
     {
         parent::execute();
 
-        if (isset($_REQUEST['code'])) {
-            // check state
-            if (
-                empty($_REQUEST['state']) ||
-                !WCF::getSession()->getVar('__openauthInit') ||
-                !hash_equals($_REQUEST['state'], WCF::getSession()->getVar('__openauthInit'))
-            ) {
-                throw new IllegalLinkException();
-            }
+        try {
+            if (isset($_GET['code'])) {
+                $tokenInfo = OpenAuthAPI::getInstance()->checkOAuthCode($_REQUEST['code']);
 
-            WCF::getSession()->unregister('__openauthInit');
-
-            // check OAuth code
-            $tokenInfo = OpenAuthAPI::getInstance()->checkOAuthCode($_REQUEST['code']);
-
-            if ($tokenInfo === null) {
-                throw new NamedUserException(WCF::getLanguage()->getDynamicVariable(
-                    'wcf.user.3rdparty.openauth.connect.error.configuration')
-                );
-            }
-
-            if (empty($tokenInfo['access_token'])) {
-                throw new NamedUserException(WCF::getLanguage()->get(
-                    'wcf.user.3rdparty.openauth.connect.error.invalid')
-                );
-            }
-
-            // get user data
-            $userData = OpenAuthAPI::getInstance()->getUserInfo($tokenInfo['access_token']);
-
-            if ($userData === null) {
-                throw new NamedUserException(WCF::getLanguage()->getDynamicVariable(
-                    'wcf.user.3rdparty.openauth.connect.error.configuration')
-                );
-            }
-
-            if (empty($userData['sub'])) {
-                throw new NamedUserException(WCF::getLanguage()->get(
-                    'wcf.user.3rdparty.openauth.connect.error.invalid')
-                );
-            }
-
-            $openAuthUserID = $userData['sub'];
-            $openAuthUsername = (!empty($userData['nickname'])) ? $userData['nickname'] : '';
-            $openAuthMail = (!empty($userData['email'])) ? $userData['email'] : '';
-            $openAuthAvatar = (!empty($userData['picture'])) ? $userData['picture'] : null;
-
-            $user = User::getUserByAuthData('openauth:' . $openAuthUserID);
-
-            if (WCF::getUser()->userID) {
-                // user is signed in and would connect
-                if ($user->userID) {
-                    // another account is connected to this openauth account
-                    throw new NamedUserException(WCF::getLanguage()->getDynamicVariable(
-                        'wcf.user.3rdparty.openauth.connect.error.inuse')
+                if ($tokenInfo === null) {
+                    throw new NamedUserException(
+                        WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration')
                     );
                 }
 
-                WCF::getSession()->register('__openAuthUsername', $openAuthUsername);
-                WCF::getSession()->register('__openAuthData', $userData);
-
-                HeaderUtil::redirect(LinkHandler::getInstance()->getLink('AccountManagement') . '#3rdParty');
-
-                $this->executed();
-
-                exit;
-            }
-
-            if ($user->userID) {
-                $userAuthentication = UserAuthenticationFactory::getInstance()->getUserAuthentication();
-
-                if (null === $userAuthentication) {
-                    throw new SystemException('No valid authentication instance found.');
+                if (empty($tokenInfo['access_token'])) {
+                    throw new NamedUserException(
+                        WCF::getLanguage()->get('wcf.user.3rdparty.openauth.connect.error.invalid')
+                    );
                 }
 
-                // login
-                if ($userAuthentication->supportsPersistentLogins()) {
-                    $password = OpenAuthAPI::getInstance()->generateRandom();
-                    $updateData = [
-                        'openAuthAvatar' => $openAuthAvatar,
-                        'password' => $password
-                    ];
+                $this->processUser($this->getUser($tokenInfo['access_token']));
+            } elseif (isset($_GET['error'])) {
+                $this->handleError($_GET['error']);
+            } else {
+                $this->initiate();
+            }
+        } catch (NamedUserException $e) {
+            throw $e;
+        } catch (StateValidationException $e) {
+            throw new NamedUserException(
+                WCF::getLanguage()->getDynamicVariable(
+                    'wcf.user.3rdparty.login.error.stateValidation'
+                )
+            );
+        } catch (Exception $e) {
+            $exceptionID = logThrowable($e);
 
-                    $userEditor = new UserEditor($user);
-                    $userEditor->update($updateData);
-
-                    // reload user to retrieve salt
-                    $user = new User($user->userID);
-
-                    $userAuthentication->storeAccessData($user, $user->username, $password);
-                }
-
-                WCF::getSession()->changeUser($user);
-                WCF::getSession()->update();
-
-                HeaderUtil::redirect(LinkHandler::getInstance()->getLink());
-
-                $this->executed();
-
-                exit;
+            $type = 'genericException';
+            if ($e instanceof ClientExceptionInterface) {
+                $type = 'httpError';
             }
 
-            // register
-            WCF::getSession()->register('__3rdPartyProvider', 'openauth');
-            WCF::getSession()->register('__openAuthData', $userData);
-            WCF::getSession()->register('__username', $openAuthUsername);
-            WCF::getSession()->register('__email', $openAuthMail);
-
-            if (REGISTER_USE_CAPTCHA) {
-                WCF::getSession()->register('noRegistrationCaptcha', true);
-            }
-
-            WCF::getSession()->update();
-
-            HeaderUtil::redirect(LinkHandler::getInstance()->getLink('Register'));
-
-            $this->executed();
-
-            exit;
+            throw new NamedUserException(
+                WCF::getLanguage()->getDynamicVariable(
+                    'wcf.user.3rdparty.login.error.' . $type,
+                    [
+                        'exceptionID' => $exceptionID,
+                    ]
+                )
+            );
         }
+    }
 
-        // user declined or another error occured
-        if (isset($_GET['error'])) {
-            throw new NamedUserException(WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.' . $_GET['error']));
-        }
-
-        $state = OpenAuthAPI::getInstance()->generateRandom();
+    /**
+     * Initiates the OAuth flow.
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \wcf\system\exception\NamedUserException
+     * @throws \wcf\system\exception\SystemException
+     */
+    protected function initiate(): void
+    {
+        $token = OpenAuthAPI::getInstance()->generateRandom();
         $scopes = OpenAuthAPI::getInstance()->getScopes();
-        $authorizationUri = OpenAuthAPI::getInstance()->getAuthorizationURI($state, $scopes);
+        $authorizationUri = OpenAuthAPI::getInstance()->getAuthorizationURI($token, $scopes);
 
-        WCF::getSession()->register('__openauthInit', $state);
+        WCF::getSession()->register(self::STATE, $token);
 
         if ($scopes === null) {
-            throw new NamedUserException(WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration'));
+            throw new NamedUserException(
+                WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration')
+            );
         }
 
         if ($authorizationUri === null) {
-            throw new NamedUserException(WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration'));
+            throw new NamedUserException(
+                WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration')
+            );
         }
 
         HeaderUtil::redirect($authorizationUri);
 
-        $this->executed();
+        exit;
+    }
+
+    /**
+     * @throws \wcf\system\exception\NamedUserException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \wcf\system\exception\SystemException
+     */
+    protected function getUser(string $accessToken): array
+    {
+        $userData = OpenAuthAPI::getInstance()->getUserInfo($accessToken);
+
+        if ($userData === null) {
+            throw new NamedUserException(
+                WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.openauth.connect.error.configuration')
+            );
+        }
+
+        if (empty($userData['sub'])) {
+            throw new NamedUserException(
+                WCF::getLanguage()->get('wcf.user.3rdparty.openauth.connect.error.invalid')
+            );
+        }
+
+        return $userData;
+    }
+
+    /**
+     * @throws \wcf\system\exception\NamedUserException
+     * @throws \wcf\system\exception\SystemException
+     */
+    protected function processUser(array $userData): void
+    {
+        $user = User::getUserByAuthData('openauth:' . $userData['sub']);
+
+        if ($user->userID) {
+            if (WCF::getUser()->userID) {
+                // This account belongs to an existing user, but we are already logged in.
+                // This can't be handled.
+                throw new NamedUserException(
+                    WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.facebook.connect.error.inuse')
+                );
+            }
+
+            // This account belongs to an existing user, we are not logged in.
+            // Perform the login, and update avatar, if there's one.
+            if (!empty($userData['picture'])) {
+                (new UserEditor($user))->update([
+                    'openAuthAvatar' => $userData['picture'],
+                ]);
+            }
+
+            WCF::getSession()->changeUser($user);
+            WCF::getSession()->update();
+            HeaderUtil::redirect(LinkHandler::getInstance()->getLink());
+
+            exit;
+        }
+
+        WCF::getSession()->register('__3rdPartyProvider', 'facebook');
+
+        if (WCF::getUser()->userID) {
+            // This account does not belong to anyone, and we are already logged in.
+            // Thus, we want to connect this account.
+            WCF::getSession()->register('__oauthUser', $userData);
+
+            HeaderUtil::redirect(LinkHandler::getInstance()->getLink('AccountManagement') . '#3rdParty');
+
+            exit;
+        }
+
+        // This account does not belong to anyone, and we are not logged in.
+        // Thus, we want to connect this account to a newly registered user.
+        WCF::getSession()->register('__oauthUser', $userData);
+        WCF::getSession()->register('__username', (!empty($userData['nickname'])) ? $userData['nickname'] : '');
+        WCF::getSession()->register('__email', (!empty($userData['email'])) ? $userData['email'] : '');
+
+        // We assume that bots won't register an external account first, so
+        // we skip the captcha.
+        WCF::getSession()->register('noRegistrationCaptcha', true);
+        WCF::getSession()->update();
+
+        HeaderUtil::redirect(LinkHandler::getInstance()->getControllerLink(RegisterForm::class));
 
         exit;
+    }
+
+    /**
+     * @throws \wcf\system\exception\NamedUserException
+     */
+    protected function handleError(string $error): void
+    {
+        throw new NamedUserException(WCF::getLanguage()->getDynamicVariable('wcf.user.3rdparty.login.error.' . $error));
+    }
+
+    /**
+     * Validates the state parameter.
+     */
+    protected function validateState(): void
+    {
+        try {
+            if (!isset($_GET['state'])) {
+                throw new StateValidationException('Missing state parameter');
+            }
+
+            if (!($sessionState = WCF::getSession()->getVar(self::STATE))) {
+                throw new StateValidationException('Missing state in session');
+            }
+
+            if (!\hash_equals($sessionState, (string)$_GET['state'])) {
+                throw new StateValidationException('Mismatching state');
+            }
+        } finally {
+            WCF::getSession()->unregister(self::STATE);
+        }
     }
 }

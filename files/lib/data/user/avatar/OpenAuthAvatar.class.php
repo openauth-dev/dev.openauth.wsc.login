@@ -2,7 +2,6 @@
 
 /*
  * Copyright by The OpenAuth.dev Team.
- * This file is part of dev.openauth.wsc.login.
  *
  * License: GNU Lesser General Public License v2.1
  *
@@ -27,30 +26,20 @@
 namespace wcf\data\user\avatar;
 
 use wcf\system\cache\runtime\UserRuntimeCache;
-use wcf\system\exception\SystemException;
 use wcf\system\request\LinkHandler;
 use wcf\system\WCF;
-
-use function file_exists;
-use function filemtime;
-use function in_array;
-use function mb_strtolower;
-use function md5;
-use function parse_url;
-use function pathinfo;
-use function sprintf;
 
 class OpenAuthAvatar extends DefaultAvatar
 {
     /**
      * @var string
      */
-    const OPENAUTH_CACHE_LOCATION = 'images/avatars/openauth/%s.%s';
+    public const OPENAUTH_CACHE_LOCATION = 'images/avatars/openauth/%s.%s';
 
     /**
      * @var int
      */
-    const OPENAUTH_CACHE_EXPIRE = 7;
+    public const OPENAUTH_CACHE_EXPIRE = 7;
 
     /**
      * @var string
@@ -77,38 +66,41 @@ class OpenAuthAvatar extends DefaultAvatar
     /**
      * @inheritDoc
      *
-     * @throws SystemException
+     * @throws \wcf\system\exception\SystemException
      */
     public function getURL($size = null): string
     {
         if (empty($this->url)) {
             $user = UserRuntimeCache::getInstance()->getObject($this->userID);
 
+            if (null === $user || !$user->userID) {
+                return '';
+            }
+
             if (empty($user->openAuthAvatar)) {
                 return '';
             }
 
-            $urlParsed = parse_url($user->openAuthAvatar);
-            $pathInfo = pathinfo($urlParsed['path']);
+            $urlParsed = \parse_url($user->openAuthAvatar);
+            $pathInfo = \pathinfo($urlParsed['path']);
 
-            if (!in_array($pathInfo['extension'], ['jpg', 'png', 'gif'])) {
+            if (!\in_array($pathInfo['extension'], ['jpg', 'png', 'gif'])) {
                 return '';
             }
 
-            $cachedFilename = sprintf(
+            $cachedFilename = \sprintf(
                 self::OPENAUTH_CACHE_LOCATION,
-                md5(mb_strtolower($user->openAuthAvatar)),
+                \md5(\mb_strtolower($user->openAuthAvatar)),
                 $pathInfo['extension']
             );
 
-            if (
-                file_exists(WCF_DIR . $cachedFilename) &&
-                filemtime(WCF_DIR . $cachedFilename) > (TIME_NOW - (self::OPENAUTH_CACHE_EXPIRE * 86400))
+            if (\file_exists(WCF_DIR . $cachedFilename)
+                && \filemtime(WCF_DIR . $cachedFilename) > (TIME_NOW - (self::OPENAUTH_CACHE_EXPIRE * 86400))
             ) {
                 $this->url = WCF::getPath() . $cachedFilename;
             } else {
                 $this->url = LinkHandler::getInstance()->getLink('OpenAuthAvatarDownload', [
-                    'forceFrontend' => true
+                    'forceFrontend' => true,
                 ], 'userID=' . $this->userID);
             }
         }
